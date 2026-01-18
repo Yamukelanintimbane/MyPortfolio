@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Download, ExternalLink, Star, Code2, Database, Server, Globe } from 'lucide-react';
-import { useMobile } from '../../contexts/MobileContext';
 
-const Hero = ({ onSectionChange }) => {
-  const { isMobile } = useMobile();
+const Hero = ({ onSectionChange, headerHeight = 80 }) => { // Added headerHeight prop
   const [currentRole, setCurrentRole] = useState(0);
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
 
   const roles = [
     'Full-Stack Developer',
@@ -38,10 +37,10 @@ const Hero = ({ onSectionChange }) => {
     const ctx = canvas.getContext('2d');
     
     const updateCanvasSize = () => {
-      const heroSection = document.getElementById('home');
-      if (heroSection) {
-        canvas.width = heroSection.clientWidth;
-        canvas.height = heroSection.clientHeight;
+      const container = containerRef.current;
+      if (container) {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
       }
     };
 
@@ -85,6 +84,9 @@ const Hero = ({ onSectionChange }) => {
     let animationId;
 
     function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Semi-transparent background for trails
       ctx.fillStyle = 'rgba(15, 23, 42, 0.03)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -117,11 +119,30 @@ const Hero = ({ onSectionChange }) => {
 
   const scrollToProjects = () => {
     onSectionChange('projects');
-    document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
+    // Using scrollIntoView with offset
+    const projectsSection = document.getElementById('projects');
+    if (projectsSection) {
+      const offset = headerHeight + 20; // Additional 20px spacing
+      const elementPosition = projectsSection.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   };
 
   return (
-    <section id="home" className="min-h-screen relative overflow-hidden gradient-bg">
+    <section 
+      id="home" 
+      ref={containerRef}
+      className="relative overflow-hidden gradient-bg"
+      style={{ 
+        minHeight: `calc(100vh - ${headerHeight}px)`, // Full height minus header
+        marginTop: `${headerHeight}px` // Push down by header height
+      }}
+    >
       {/* Network Nodes Background */}
       <canvas
         ref={canvasRef}
@@ -131,13 +152,13 @@ const Hero = ({ onSectionChange }) => {
       {/* Enhanced Hero Gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-blue-900/10 to-transparent" />
 
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-6">
-        <div className="max-w-6xl mx-auto text-center">
+      <div className="relative z-10 w-full h-full flex items-center justify-center px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto text-center w-full">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
             {/* Profile Image & Badge */}
             <motion.div
@@ -146,12 +167,16 @@ const Hero = ({ onSectionChange }) => {
               transition={{ delay: 0.2, type: "spring" }}
               className="relative inline-block"
             >
-              <div className="w-32 h-32 md:w-40 md:h-40 mx-auto rounded-full bg-gradient-to-r from-accent-purple to-accent-pink p-1">
+              <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 mx-auto rounded-full bg-gradient-to-r from-accent-purple to-accent-pink p-1">
                 <div className="w-full h-full rounded-full bg-dark-500 flex items-center justify-center overflow-hidden">
                   <img
                     src="/images/profile/Yamdev.jpg"
                     alt="Yamukelani's Profile Photo"
                     className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://via.placeholder.com/160/8b5cf6/ffffff?text=YN";
+                    }}
                   />
                 </div>
               </div>
@@ -161,24 +186,26 @@ const Hero = ({ onSectionChange }) => {
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.5 }}
-                className="absolute bottom-2 right-2 md:bottom-4 md:right-4 w-6 h-6 bg-green-500 rounded-full border-4 border-dark-500"
+                className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 md:bottom-4 md:right-4 w-4 h-4 sm:w-5 sm:h-5 bg-green-500 rounded-full border-2 sm:border-4 border-dark-500"
               />
             </motion.div>
 
             {/* Main Heading */}
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <motion.h1
-                className="text-4xl md:text-7xl font-bold"
+                className="text-3xl sm:text-5xl md:text-7xl font-bold"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
               >
                 Yamukelani{' '}
-                <span className="gradient-text">Ntimbane</span>
+                <span className="gradient-text bg-gradient-to-r from-accent-purple via-accent-pink to-accent-blue bg-clip-text text-transparent">
+                  Ntimbane
+                </span>
               </motion.h1>
               
               <motion.div
-                className="h-16 md:h-20"
+                className="h-12 sm:h-16 md:h-20"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
@@ -186,7 +213,7 @@ const Hero = ({ onSectionChange }) => {
                 <AnimatePresence mode="wait">
                   <motion.h2
                     key={currentRole}
-                    className="text-xl md:text-3xl text-gray-300 font-light"
+                    className="text-lg sm:text-xl md:text-3xl text-gray-300 font-light"
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: -20, opacity: 0 }}
@@ -200,7 +227,7 @@ const Hero = ({ onSectionChange }) => {
 
             {/* Description */}
             <motion.p
-              className="text-lg md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed"
+              className="text-base sm:text-lg md:text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed px-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
@@ -213,7 +240,7 @@ const Hero = ({ onSectionChange }) => {
 
             {/* Tech Stack Icons */}
             <motion.div
-              className="flex justify-center items-center space-x-6 pt-4"
+              className="flex flex-wrap justify-center items-center gap-4 sm:gap-6 pt-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
@@ -221,12 +248,12 @@ const Hero = ({ onSectionChange }) => {
               {techIcons.map((tech, index) => (
                 <motion.div
                   key={tech.name}
-                  className="flex flex-col items-center space-y-2"
+                  className="flex flex-col items-center space-y-1 sm:space-y-2"
                   whileHover={{ scale: 1.1, y: -5 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <div className="w-12 h-12 bg-dark-400 rounded-xl flex items-center justify-center border border-gray-700">
-                    <tech.icon size={24} className="text-accent-purple" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-dark-400 rounded-xl flex items-center justify-center border border-gray-700">
+                    <tech.icon size={20} className="sm:w-6 sm:h-6 text-accent-purple" />
                   </div>
                   <span className="text-xs text-gray-400">{tech.name}</span>
                 </motion.div>
@@ -235,14 +262,14 @@ const Hero = ({ onSectionChange }) => {
 
             {/* CTA Buttons */}
             <motion.div
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center pt-6 sm:pt-8"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1.1 }}
             >
               <motion.button
                 onClick={scrollToProjects}
-                className="bg-accent-purple text-white px-8 py-4 rounded-xl font-semibold hover:bg-purple-600 transition-all duration-300 transform hover:scale-105 flex items-center space-x-3 shadow-lg shadow-purple-500/25"
+                className="bg-accent-purple text-white px-6 py-3 sm:px-8 sm:py-4 rounded-xl font-semibold hover:bg-purple-600 transition-all duration-300 transform hover:scale-105 flex items-center space-x-2 sm:space-x-3 shadow-lg shadow-purple-500/25 w-full sm:w-auto justify-center"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -251,8 +278,8 @@ const Hero = ({ onSectionChange }) => {
               </motion.button>
               
               <motion.button
-                onClick={() => onSectionChange('contact')}
-                className="border-2 border-gray-600 text-white px-8 py-4 rounded-xl font-semibold hover:border-accent-purple hover:bg-accent-purple/10 transition-all duration-300 flex items-center space-x-3 backdrop-blur-sm"
+                onClick={() => onSectionChange && onSectionChange('contact')}
+                className="border-2 border-gray-600 text-white px-6 py-3 sm:px-8 sm:py-4 rounded-xl font-semibold hover:border-accent-purple hover:bg-accent-purple/10 transition-all duration-300 flex items-center space-x-2 sm:space-x-3 backdrop-blur-sm w-full sm:w-auto justify-center"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -263,7 +290,7 @@ const Hero = ({ onSectionChange }) => {
 
             {/* Quick Stats */}
             <motion.div
-              className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-12 max-w-2xl mx-auto"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 pt-8 sm:pt-12 max-w-2xl mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.3 }}
@@ -271,30 +298,30 @@ const Hero = ({ onSectionChange }) => {
               {stats.map((stat, index) => (
                 <motion.div
                   key={stat.label}
-                  className="text-center p-4 rounded-2xl glass hover:bg-white/10 transition-all duration-300"
+                  className="text-center p-3 sm:p-4 rounded-2xl glass hover:bg-white/10 transition-all duration-300"
                   whileHover={{ y: -5, scale: 1.05 }}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 1.5 + index * 0.1 }}
                 >
-                  <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+                  <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-1">
                     {stat.number}
                   </div>
-                  <div className="text-gray-400 text-sm flex items-center justify-center space-x-1">
-                    <stat.icon size={14} />
+                  <div className="text-gray-400 text-xs sm:text-sm flex items-center justify-center space-x-1">
+                    <stat.icon size={12} className="sm:w-4 sm:h-4" />
                     <span>{stat.label}</span>
                   </div>
                 </motion.div>
               ))}
             </motion.div>
 
-            {/* Scroll Indicator - MOVED BELOW QUICK STATS */}
+            {/* Scroll Indicator */}
             <motion.div
-              className="mt-8 mx-auto" // 👈 Relative positioning, centered
+              className="mt-6 sm:mt-8 mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 2 }}
-              role="button" // 👈 Accessibility
+              role="button"
               aria-label="Scroll to projects section"
             >
               <motion.div
@@ -303,8 +330,8 @@ const Hero = ({ onSectionChange }) => {
                 className="flex flex-col items-center space-y-2 text-gray-400 cursor-pointer"
                 onClick={scrollToProjects}
               >
-                <span className="text-sm">Scroll to explore</span>
-                <ChevronDown size={20} />
+                <span className="text-xs sm:text-sm">Scroll to explore</span>
+                <ChevronDown size={16} className="sm:w-5 sm:h-5" />
               </motion.div>
             </motion.div>
           </motion.div>
