@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-// Removed analytics import to fix build issues
 
 // Components
 import Hero from './Hero';
@@ -16,10 +15,9 @@ import Contact from './Contact';
 const Home = ({ onSectionChange }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  // Analytics tracking is handled through direct imports
-  
   const [activeSection, setActiveSection] = useState('hero');
   const [isScrolling, setIsScrolling] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(80); // Default to 80px (5rem)
   
   // Section refs for smooth scrolling
   const sections = {
@@ -32,6 +30,27 @@ const Home = ({ onSectionChange }) => {
     hire: useRef(null),
     contact: useRef(null)
   };
+
+  // Get actual header height on component mount
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      const header = document.querySelector('header');
+      if (header) {
+        const height = header.offsetHeight;
+        setHeaderHeight(height);
+        console.log('Header height:', height, 'px');
+      } else {
+        // Fallback to common header heights
+        const isMobile = window.innerWidth < 768;
+        setHeaderHeight(isMobile ? 64 : 80); // 4rem for mobile, 5rem for desktop
+      }
+    };
+
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+    
+    return () => window.removeEventListener('resize', updateHeaderHeight);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,15 +84,16 @@ const Home = ({ onSectionChange }) => {
     
     const section = sections[sectionId];
     if (section && section.current) {
-      section.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
+      // Calculate position with header offset
+      const sectionTop = section.current.offsetTop - headerHeight + 20; // +20 for a little extra spacing
+      
+      window.scrollTo({
+        top: sectionTop,
+        behavior: 'smooth'
       });
       
       setActiveSection(sectionId);
       onSectionChange?.(sectionId);
-      
-      // Analytics tracking removed to fix build issues
       
       // Update URL without hash for clean URLs
       navigate(`/${sectionId === 'hero' ? '' : sectionId}`, { replace: true });
@@ -102,46 +122,98 @@ const Home = ({ onSectionChange }) => {
     // Handle initial hash navigation
     const hash = location.hash.replace('#', '');
     if (hash && sections[hash]) {
-      setTimeout(() => scrollToSection(hash), 100);
+      setTimeout(() => scrollToSection(hash), 300);
     }
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [location.hash]);
+  }, [location.hash, headerHeight]); // Added headerHeight dependency
+
+  // Calculate scroll progress percentage
+  const [scrollProgress, setScrollProgress] = useState(0);
+  
+  useEffect(() => {
+    const updateScrollProgress = () => {
+      const scrollTop = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      const totalScroll = docHeight - windowHeight;
+      const progress = totalScroll > 0 ? (scrollTop / totalScroll) * 100 : 0;
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener('scroll', updateScrollProgress);
+    updateScrollProgress(); // Initial call
+    
+    return () => window.removeEventListener('scroll', updateScrollProgress);
+  }, []);
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ paddingTop: `${headerHeight}px` }}>
       {/* Smooth scrolling container */}
       <div className="scroll-smooth">
-        <section ref={sections.hero}>
+        {/* Add scroll-margin-top to all sections for anchor links */}
+        <section 
+          ref={sections.hero} 
+          className="min-h-screen flex items-center justify-center scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <Hero onNavigate={scrollToSection} />
         </section>
         
-        <section ref={sections.about}>
+        <section 
+          ref={sections.about} 
+          className="scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <About />
         </section>
         
-        <section ref={sections.skills}>
+        <section 
+          ref={sections.skills} 
+          className="scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <Skills />
         </section>
         
-        <section ref={sections.projects}>
+        <section 
+          ref={sections.projects} 
+          className="scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <Projects />
         </section>
         
-        <section ref={sections.experience}>
+        <section 
+          ref={sections.experience} 
+          className="scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <Experience />
         </section>
         
-        <section ref={sections.testimonials}>
+        <section 
+          ref={sections.testimonials} 
+          className="scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <Testimonials />
         </section>
         
-        <section ref={sections.hire}>
+        <section 
+          ref={sections.hire} 
+          className="scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <HireMe />
         </section>
         
-        <section ref={sections.contact}>
+        <section 
+          ref={sections.contact} 
+          className="scroll-mt-20"
+          style={{ scrollMarginTop: `${headerHeight + 20}px` }}
+        >
           <Contact />
         </section>
       </div>
@@ -151,7 +223,7 @@ const Home = ({ onSectionChange }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 1.5 }}
-        className="fixed bottom-8 right-8 flex flex-col gap-4 z-50"
+        className="fixed bottom-8 right-8 flex flex-col gap-4 z-40"
       >
         <button
           onClick={() => scrollToSection('hire')}
@@ -174,15 +246,34 @@ const Home = ({ onSectionChange }) => {
         </button>
       </motion.div>
 
-      {/* Scroll progress indicator */}
-      <div className="fixed top-0 left-0 w-full h-1 bg-gray-800 z-50">
-        <motion.div
-          className="h-full bg-accent-purple"
-          style={{
-            width: `${(window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100}%`
-          }}
-          transition={{ type: 'tween', duration: 0.1 }}
-        />
+      {/* Scroll progress indicator - positioned below header */}
+      <motion.div
+        className="fixed left-0 right-0 h-1 bg-gray-800 z-50"
+        style={{
+          top: `${headerHeight}px`,
+          transformOrigin: 'left',
+          scaleX: scrollProgress / 100,
+        }}
+        transition={{ type: 'tween', duration: 0.1 }}
+      >
+        <div className="h-full bg-gradient-to-r from-accent-purple to-accent-cyan w-full" />
+      </motion.div>
+
+      {/* Optional: Quick navigation dots */}
+      <div className="fixed right-4 top-1/2 transform -translate-y-1/2 hidden lg:flex flex-col gap-3 z-40">
+        {Object.keys(sections).map((section) => (
+          <button
+            key={section}
+            onClick={() => scrollToSection(section)}
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              activeSection === section 
+                ? 'bg-accent-purple scale-125' 
+                : 'bg-gray-600 hover:bg-gray-400'
+            }`}
+            aria-label={`Scroll to ${section}`}
+            title={`Go to ${section.charAt(0).toUpperCase() + section.slice(1)}`}
+          />
+        ))}
       </div>
     </div>
   );
